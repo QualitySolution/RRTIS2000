@@ -3,11 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Работа с базой TIS 2000" Height="350" Width="525">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="0*"/>
+        </Grid.RowDefinitions>
         <Label Content="Номер:" HorizontalAlignment="Left" Margin="57,37,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbNumber" HorizontalAlignment="Left" Height="23" Margin="112,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <Button Content="Найти" HorizontalAlignment="Left" Margin="280,40,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <Button Content="Найти" HorizontalAlignment="Left" Margin="257,40,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
         <Label x:Name="LableResult" Content="Данные не запрошены" HorizontalAlignment="Left" Margin="57,95,0,0" VerticalAlignment="Top" Width="298"/>
         <Button x:Name="btSave" Content="Сохранить на диск" HorizontalAlignment="Left" Margin="57,183,0,0" VerticalAlignment="Top" Width="142" Height="25" IsEnabled="False" Click="btSave_Click"/>
+        <Button Content="Список всех номеров" HorizontalAlignment="Left" Margin="354,40,0,0" VerticalAlignment="Top" Width="144" Click="Button_Click_1"/>
 
     </Grid>
 </Window>

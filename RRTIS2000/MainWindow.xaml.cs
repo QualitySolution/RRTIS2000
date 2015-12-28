@@ -3,6 +3,7 @@ using System;
 using System.Data.Odbc;
 using System.Windows;
 using System.IO;
+using System.Text;
 
 namespace RRTIS2000
 {
@@ -83,6 +84,51 @@ namespace RRTIS2000
 					MessageBox.Show( String.Format("Exception caught in process: {0}", _Exception.ToString()));
 				}
 
+			}
+		}
+
+		private void Button_Click_1(object sender, RoutedEventArgs e)
+		{
+			var list = new StringBuilder();
+
+			using (OdbcCommand com = new OdbcCommand(
+				"SELECT Calibration_Part_No FROM Calibration_Files", Connection))
+			{
+				using (OdbcDataReader reader = com.ExecuteReader())
+				{
+					while (reader.Read())
+					{
+						list.AppendLine(reader.GetValue(0).ToString());
+					}
+				}
+			}
+
+			if (list.Length > 0)
+			{
+				SaveFileDialog dlg = new SaveFileDialog();
+				dlg.FileName = String.Format("allNumbers.txt"); // Default file name
+				dlg.Filter = "Text documents (.txt)|*.txt"; // Filter files by extension
+
+				// Show save file dialog box
+				Nullable<bool> result = dlg.ShowDialog();
+
+				// Process save file dialog box results
+				if (result == true)
+				{
+					// Save document
+					try
+					{
+						File.WriteAllText(dlg.FileName, list.ToString());
+
+					}
+					catch (Exception _Exception)
+					{
+						// Error
+						MessageBox.Show(String.Format("Exception caught in process: {0}", _Exception.ToString()));
+					}
+
+					System.Diagnostics.Process.Start(dlg.FileName);
+				}
 			}
 		}
 	}
