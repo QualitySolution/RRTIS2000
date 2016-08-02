@@ -1,9 +1,11 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Data.Odbc;
-using System.Windows;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Windows;
 
 namespace RRTIS2000
 {
@@ -28,6 +30,8 @@ namespace RRTIS2000
 
 		private byte[] ReadedFile;
 		private string number;
+
+		public List<ControllerItem> controllersList;
 
 		public MainWindow()
 		{
@@ -169,6 +173,121 @@ namespace RRTIS2000
 
 			}
 
+		}
+
+		private void buttonVinFine_Click(object sender, RoutedEventArgs e)
+		{
+			try
+			{
+				var vin = tbVin.Text;
+				int vin_id;
+
+				string controller_Id_String, VCI_String;
+				
+				//Fine Vin id
+				using (OdbcCommand com = new OdbcCommand(
+					"SELECT VIN_Id FROM VCI_AsBuilt_Id WHERE (VIN_1To8 = ?) AND (VIN_10 = ?) AND (VIN_11 = ?)", Connection))
+				{
+					com.Parameters.AddWithValue("?1", vin.Substring(0, 8));
+					com.Parameters.AddWithValue("?2", vin.Substring(9, 1));
+					com.Parameters.AddWithValue("?3", vin.Substring(10, 1));
+
+					using (OdbcDataReader reader = com.ExecuteReader())
+					{
+						if (!reader.HasRows)
+						{
+							var text = String.Format("Семейство машин для указанного VIN не найдено в БД.\n [{0}]{1}[{2}]{3}",
+								vin.Substring(0, 8),
+								vin[8],
+								vin.Substring(9, 2),
+								vin.Substring(10)
+								);
+							MessageBox.Show(text);
+							return;
+						}
+						reader.Read();
+
+						vin_id = reader.GetInt32(0);
+					}
+				}
+
+				//Fine Car
+				using (OdbcCommand com = new OdbcCommand(
+					"SELECT Controller_Id_String, VCI_String FROM VCI_AsBuilt_String WHERE (VIN_Id = ?) AND (VIN_12To17 = ?)", Connection))
+				{
+					com.Parameters.AddWithValue("?1", vin_id);
+					com.Parameters.AddWithValue("?2", vin.Substring(11, 6));
+
+					using (OdbcDataReader reader = com.ExecuteReader())
+					{
+						if (!reader.HasRows)
+						{
+							var text = String.Format("Машина для указанного VIN не найдена в БД.\n {0}[{1}]",
+								vin.Substring(0, 11),
+								vin.Substring(11, 6)
+								);
+							MessageBox.Show("Машина для указанного VIN не найден в БД.");
+							return;
+						}
+						reader.Read();
+
+						controller_Id_String = reader.GetString(0);
+						VCI_String = reader.GetString(1);
+					}
+				}
+
+				var splitedId = controller_Id_String.Split(',');
+				var splitedVCI = VCI_String.Split(',');
+				var lastOfVIN =  int.Parse(vin.Substring(11,6));
+
+				controllersList = new List<ControllerItem>();
+
+				for (int i = 0; i < splitedId.Length; i++)
+				{
+					var controler = new ControllerItem
+					{
+						ContrillerId = int.Parse(splitedId[i]),
+						VCI_Controller = int.Parse(splitedVCI[i])
+					};
+					controler.VCI_Car = controler.VCI_Controller + lastOfVIN;
+					controllersList.Add(controler);
+				}
+
+				//Fine Controllers Descriptions
+				var sql = String.Format("SELECT Controller_Id, Controller_Name, Description FROM Controller_Description WHERE (Language_Code = 1033) AND (Controller_Id IN ({0}))",
+					controller_Id_String);
+				using (OdbcCommand com = new OdbcCommand(sql , Connection))
+				{
+					//com.Parameters.AddWithValue("?1", controller_Id_String);
+					//com.Parameters.AddWithValue("?1", controllersList.Select(x => x.ContrillerId).ToArray());
+
+					using (OdbcDataReader reader = com.ExecuteReader())
+					{
+						while (reader.Read())
+						{
+							var controllerId = reader.GetInt32(0);
+							var controller = controllersList.FirstOrDefault(x => x.ContrillerId == controllerId);
+							if (controller != null)
+							{
+								controller.ControllerName = reader.GetString(1);
+								controller.ControllerDiscription = reader.GetString(2);
+							}
+						}
+					}
+				}
+
+				gridControllers.ItemsSource = controllersList;
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(String.Format("Ошибка при запросе: {0}", ex.ToString()));
+			}
+
+		}
+
+		private void tbVin_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+		{
+			buttonVinFine.IsEnabled = tbVin.Text.Length == 17;
 		}
 	}
 }
