@@ -200,7 +200,7 @@ namespace RRTIS2000
 								vin.Substring(0, 8),
 								vin[8],
 								vin.Substring(9, 2),
-								vin.Substring(10)
+								vin.Substring(11)
 								);
 							MessageBox.Show(text);
 							return;
